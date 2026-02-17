@@ -6,12 +6,10 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f6f9;
+            background: #f4f6f9;
             padding: 20px;
         }
-        h2 {
-            margin-bottom: 20px;
-        }
+        h2 { margin-bottom: 20px; }
         .news-item {
             margin-bottom: 15px;
             padding: 15px;
@@ -27,39 +25,47 @@
         .date {
             font-size: 12px;
             color: gray;
-            margin-top: 5px;
         }
     </style>
 </head>
-
 <body>
 
 <h2>WTOP Local News</h2>
-<div id="feed"></div>
+<div id="feed">Loading news...</div>
 
 <script>
-fetch("https://api.rss2json.com/v1/api.json?rss_url=http://wtop.com/region/local/feed/")
-.then(response => response.json())
-.then(data => {
-    const feedContainer = document.getElementById("feed");
+const rssUrl = "https://api.allorigins.win/raw?url=" + 
+               encodeURIComponent("http://wtop.com/region/local/feed/");
 
-    data.items.slice(0, 10).forEach(item => {
-        const div = document.createElement("div");
-        div.className = "news-item";
+fetch(rssUrl)
+  .then(response => response.text())
+  .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
+  .then(data => {
+      const items = data.querySelectorAll("item");
+      const container = document.getElementById("feed");
+      container.innerHTML = "";
 
-        div.innerHTML = `
-            <a href="${item.link}" target="_blank">${item.title}</a>
-            <div class="date">${new Date(item.pubDate).toLocaleString()}</div>
-            <p>${item.description.substring(0,150)}...</p>
-        `;
+      items.forEach((el, index) => {
+          if (index < 10) {
+              const title = el.querySelector("title").textContent;
+              const link = el.querySelector("link").textContent;
+              const pubDate = el.querySelector("pubDate").textContent;
 
-        feedContainer.appendChild(div);
-    });
-})
-.catch(error => {
-    document.getElementById("feed").innerHTML =
-        "Unable to load news feed. Please check RSS source.";
-});
+              const div = document.createElement("div");
+              div.className = "news-item";
+              div.innerHTML = `
+                  <a href="${link}" target="_blank">${title}</a>
+                  <div class="date">${new Date(pubDate).toLocaleString()}</div>
+              `;
+
+              container.appendChild(div);
+          }
+      });
+  })
+  .catch(error => {
+      document.getElementById("feed").innerHTML =
+        "Unable to load feed. CORS restriction or network issue.";
+  });
 </script>
 
 </body>
